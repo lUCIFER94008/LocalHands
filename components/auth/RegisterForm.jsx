@@ -1,0 +1,388 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { customerRegisterSchema, providerRegisterSchema } from '@/lib/validations';
+import { apiFetch } from '@/lib/api';
+import { SERVICE_CATEGORIES } from '@/lib/constants';
+import { Input } from '@/ui/Input';
+import { Select } from '@/ui/Select';
+import { Textarea } from '@/ui/Textarea';
+import { Button } from '@/ui/Button';
+import { useToast } from '@/ui/Toast';
+import { Mail, Lock, User, Phone, MapPin, Briefcase, DollarSign, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
+
+export function RegisterForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultRole = searchParams.get('role') === 'provider' ? 'provider' : 'customer';
+  const [role, setRole] = useState(defaultRole);
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [photoError, setPhotoError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Form for Customer
+  const customerForm = useForm({
+    resolver: zodResolver(customerRegisterSchema),
+    defaultValues: { name: '', email: '', phone: '', password: '', confirmPassword: '' },
+  });
+
+  // Form for Provider
+  const providerForm = useForm({
+    resolver: zodResolver(providerRegisterSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
+      profession: 'Electrician',
+      experience: '5 years',
+      location: 'Kochi, Kerala',
+      priceFrom: 499,
+      description: '',
+    },
+  });
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Image file size exceeds 5MB limit');
+      return;
+    }
+
+    setPhotoError('');
+    setUploadingImage(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await apiFetch('/api/uploads/provider', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.data?.url) {
+        setProfilePhotoUrl(res.data.url);
+        setPhotoPreview(URL.createObjectURL(file));
+        toast.success('Photo uploaded successfully');
+      }
+    } catch (err) {
+      setPhotoError(err.message || 'Image upload failed');
+      toast.error('Image upload failed');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const onCustomerSubmit = async (data) => {
+    setLoading(true);
+    try {
+      const res = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ ...data, role: 'customer' }),
+      });
+
+      if (res.success) {
+        toast.success('Account registered successfully!');
+        router.push('/customer');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onProviderSubmit = async (data) => {
+    if (!profilePhotoUrl) {
+      setPhotoError('Profile photo is mandatory for service providers');
+      toast.error('Profile photo is mandatory');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ ...data, role: 'provider', profilePhoto: profilePhotoUrl }),
+      });
+
+      if (res.success) {
+        setSuccessMessage('Application submitted! Your provider account is pending admin approval.');
+        toast.success('Provider registration submitted');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (successMessage) {
+    return (
+      <div className="max-w-md mx-auto p-8 bg-white rounded-3xl border border-slate-200 shadow-xl text-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+          <AlertCircle className="w-8 h-8" />
+        </div>
+        <h3 className="text-2xl font-bold text-slate-900">Application Under Review</h3>
+        <p className="text-xs text-slate-600 leading-relaxed">{successMessage}</p>
+        <p className="text-xs font-semibold text-slate-400">Our team will verify your credentials and approve your profile shortly.</p>
+        <div className="pt-4">
+          <Link href="/login">
+            <Button variant="primary" className="w-full">
+              Back to Login
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-lg mx-auto space-y-6">
+      <div className="space-y-1 text-center sm:text-left">
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Create an Account</h2>
+        <p className="text-xs text-slate-500">Join Local Hands as a Customer or Service Expert</p>
+      </div>
+
+      {/* Role Tabs */}
+      <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <button
+          type="button"
+          onClick={() => setRole('customer')}
+          className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+            role === 'customer'
+              ? 'bg-white text-blue-600 shadow-xs border border-slate-200'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Customer
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setRole('provider')}
+          className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+            role === 'provider'
+              ? 'bg-white text-blue-600 shadow-xs border border-slate-200'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Service Provider
+        </button>
+      </div>
+
+      {/* CUSTOMER FORM */}
+      {role === 'customer' && (
+        <form onSubmit={customerForm.handleSubmit(onCustomerSubmit)} className="space-y-4">
+          <Input
+            label="Full Name"
+            icon={User}
+            placeholder="John Doe"
+            required
+            {...customerForm.register('name')}
+            error={customerForm.formState.errors.name?.message}
+          />
+
+          <Input
+            label="Email Address"
+            type="email"
+            icon={Mail}
+            placeholder="john@example.com"
+            required
+            {...customerForm.register('email')}
+            error={customerForm.formState.errors.email?.message}
+          />
+
+          <Input
+            label="Phone Number"
+            type="tel"
+            icon={Phone}
+            placeholder="9876543210"
+            required
+            {...customerForm.register('phone')}
+            error={customerForm.formState.errors.phone?.message}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Password"
+              type="password"
+              icon={Lock}
+              placeholder="••••••••"
+              required
+              {...customerForm.register('password')}
+              error={customerForm.formState.errors.password?.message}
+            />
+
+            <Input
+              label="Confirm Password"
+              type="password"
+              icon={Lock}
+              placeholder="••••••••"
+              required
+              {...customerForm.register('confirmPassword')}
+              error={customerForm.formState.errors.confirmPassword?.message}
+            />
+          </div>
+
+          <Button type="submit" variant="primary" isLoading={loading} className="w-full py-3 text-sm font-bold">
+            Create Customer Account
+          </Button>
+        </form>
+      )}
+
+      {/* PROVIDER FORM */}
+      {role === 'provider' && (
+        <form onSubmit={providerForm.handleSubmit(onProviderSubmit)} className="space-y-4">
+          <Input
+            label="Full Name"
+            icon={User}
+            placeholder="Arun Kumar"
+            required
+            {...providerForm.register('name')}
+            error={providerForm.formState.errors.name?.message}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Email Address"
+              type="email"
+              icon={Mail}
+              placeholder="arun@example.com"
+              required
+              {...providerForm.register('email')}
+              error={providerForm.formState.errors.email?.message}
+            />
+
+            <Input
+              label="Phone Number"
+              type="tel"
+              icon={Phone}
+              placeholder="9847112233"
+              required
+              {...providerForm.register('phone')}
+              error={providerForm.formState.errors.phone?.message}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select
+              label="Profession / Category"
+              required
+              options={SERVICE_CATEGORIES.map((c) => ({ value: c.name, label: c.name }))}
+              {...providerForm.register('profession')}
+              error={providerForm.formState.errors.profession?.message}
+            />
+
+            <Input
+              label="Years of Experience"
+              placeholder="6 years"
+              required
+              {...providerForm.register('experience')}
+              error={providerForm.formState.errors.experience?.message}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Location / City"
+              icon={MapPin}
+              placeholder="Kochi, Kerala"
+              required
+              {...providerForm.register('location')}
+              error={providerForm.formState.errors.location?.message}
+            />
+
+            <Input
+              label="Starting Service Rate (₹)"
+              type="number"
+              icon={DollarSign}
+              placeholder="499"
+              required
+              {...providerForm.register('priceFrom')}
+              error={providerForm.formState.errors.priceFrom?.message}
+            />
+          </div>
+
+          <Textarea
+            label="Description / About Your Services"
+            placeholder="Provide details of your experience, certifications, and work specialization..."
+            rows={3}
+            {...providerForm.register('description')}
+          />
+
+          {/* Profile Photo Upload Field */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700">
+              Profile Photo <span className="text-red-500">* (Mandatory: JPG, PNG, WEBP, max 5MB)</span>
+            </label>
+            <div className="flex items-center gap-4 p-3 border border-slate-200 rounded-xl bg-slate-50">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Preview" className="w-14 h-14 rounded-full object-cover border" />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center text-slate-400">
+                  <User className="w-6 h-6" />
+                </div>
+              )}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handlePhotoUpload}
+                  className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+                />
+                {uploadingImage && <p className="text-[10px] text-blue-600 mt-1">Uploading image...</p>}
+                {photoError && <p className="text-[10px] text-red-500 mt-1">{photoError}</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Password"
+              type="password"
+              icon={Lock}
+              placeholder="••••••••"
+              required
+              {...providerForm.register('password')}
+              error={providerForm.formState.errors.password?.message}
+            />
+
+            <Input
+              label="Confirm Password"
+              type="password"
+              icon={Lock}
+              placeholder="••••••••"
+              required
+              {...providerForm.register('confirmPassword')}
+              error={providerForm.formState.errors.confirmPassword?.message}
+            />
+          </div>
+
+          <Button type="submit" variant="primary" isLoading={loading} className="w-full py-3 text-sm font-bold">
+            Apply as Service Provider
+          </Button>
+        </form>
+      )}
+
+      <div className="text-center pt-2 text-xs text-slate-500">
+        Already have an account?{' '}
+        <Link href="/login" className="font-bold text-blue-600 hover:underline">
+          Sign In
+        </Link>
+      </div>
+    </div>
+  );
+}
