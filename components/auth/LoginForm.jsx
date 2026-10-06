@@ -7,10 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '@/lib/validations';
 import { apiFetch } from '@/lib/api';
-import { Input } from '@/ui/Input';
-import { Button } from '@/ui/Button';
-import { useToast } from '@/ui/Toast';
-import { Mail, Lock, UserCheck, Briefcase } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
+import { Mail, Lock, UserRound, BriefcaseBusiness, ShieldCheck } from 'lucide-react';
 
 export function LoginForm() {
   const router = useRouter();
@@ -45,11 +45,16 @@ export function LoginForm() {
 
       if (res.success) {
         toast.success('Login successful!');
-        const target = redirectPath || res.data.redirectPath || '/customer';
+        const userRole = res.data?.user?.role;
+        let defaultRedirect = '/customer';
+        if (userRole === 'provider') defaultRedirect = '/provider';
+        if (userRole === 'admin') defaultRedirect = '/admin';
+
+        const target = redirectPath || res.data?.redirectPath || defaultRedirect;
         router.push(target);
       }
     } catch (err) {
-      const msg = err.message || 'Login failed. Please check credentials.';
+      const msg = err.message || 'Invalid email or password.';
       setErrorMessage(msg);
       toast.error(msg);
     } finally {
@@ -57,39 +62,62 @@ export function LoginForm() {
     }
   };
 
+  const getButtonText = () => {
+    if (role === 'admin') return 'Sign In as Admin';
+    if (role === 'provider') return 'Sign In as Service Provider';
+    return 'Sign In as Customer';
+  };
+
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="space-y-1 text-center sm:text-left">
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Welcome Back</h2>
-        <p className="text-xs text-slate-500">Sign in to manage your bookings and account</p>
+        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Welcome Back</h2>
+        <p className="text-xs text-slate-500 font-normal">
+          {role === 'admin'
+            ? 'Sign in to manage Local Hands platform'
+            : 'Sign in to manage your bookings and account'}
+        </p>
       </div>
 
-      {/* Role Toggle Switch */}
-      <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+      {/* Role Toggle Switch (3 options: Customer, Service Provider, Admin) */}
+      <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-center">
         <button
           type="button"
           onClick={() => setRole('customer')}
-          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
             role === 'customer'
-              ? 'bg-white text-blue-600 shadow-xs border border-slate-200'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-gradient-to-r from-[#2563EB] to-[#7C3AED] text-white shadow-md shadow-blue-500/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
           }`}
         >
-          <UserCheck className="w-4 h-4" />
-          Customer
+          <UserRound className="w-4 h-4 shrink-0" />
+          <span className="truncate">Customer</span>
         </button>
 
         <button
           type="button"
           onClick={() => setRole('provider')}
-          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
             role === 'provider'
-              ? 'bg-white text-blue-600 shadow-xs border border-slate-200'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-gradient-to-r from-[#2563EB] to-[#7C3AED] text-white shadow-md shadow-blue-500/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
           }`}
         >
-          <Briefcase className="w-4 h-4" />
-          Service Provider
+          <BriefcaseBusiness className="w-4 h-4 shrink-0" />
+          <span className="truncate">Service Provider</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setRole('admin')}
+          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
+            role === 'admin'
+              ? 'bg-gradient-to-r from-[#2563EB] to-[#7C3AED] text-white shadow-md shadow-blue-500/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 shrink-0" />
+          <span className="truncate">Admin</span>
         </button>
       </div>
 
@@ -121,23 +149,31 @@ export function LoginForm() {
             error={errors.password?.message}
           />
           <div className="flex justify-end pt-1">
-            <Link href="/forgot-password" className="text-xs font-semibold text-blue-600 hover:underline">
+            <Link href="/forgot-password" className="text-xs font-semibold text-[#2563EB] hover:underline">
               Forgot password?
             </Link>
           </div>
         </div>
 
-        <Button type="submit" variant="primary" isLoading={loading} className="w-full py-3 text-sm font-bold">
-          Sign In as {role === 'customer' ? 'Customer' : 'Provider'}
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={loading}
+          className="w-full py-3 text-sm font-bold bg-gradient-to-r from-[#2563EB] to-[#7C3AED] rounded-xl shadow-lg shadow-blue-600/25"
+        >
+          {getButtonText()}
         </Button>
       </form>
 
-      <div className="text-center pt-2 text-xs text-slate-500">
-        Don't have an account?{' '}
-        <Link href={`/register?role=${role}`} className="font-bold text-blue-600 hover:underline">
-          Create Account
-        </Link>
-      </div>
+      {role !== 'admin' && (
+        <div className="text-center pt-2 text-xs text-slate-500">
+          Don't have an account?{' '}
+          <Link href={`/register?role=${role}`} className="font-bold text-[#2563EB] hover:underline">
+            Create Account
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
+
