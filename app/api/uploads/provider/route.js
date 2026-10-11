@@ -8,21 +8,33 @@ export async function POST(req) {
 
     if (!file) {
       return NextResponse.json(
-        { success: false, error: { message: 'No image file uploaded' } },
+        { success: false, error: { message: 'No image file uploaded. Please select a profile photo.' } },
         { status: 400 }
       );
     }
 
-    const imageUrl = await saveProviderImage(file);
+    const result = await saveProviderImage(file);
 
     return NextResponse.json({
       success: true,
-      data: { url: imageUrl, imageUrl },
-      message: 'Image uploaded successfully',
+      data: {
+        url: result.url,
+        publicId: result.publicId,
+        imageUrl: result.url, // backwards compatibility
+      },
+      message: 'Image uploaded successfully to Cloudinary',
     });
   } catch (error) {
+    const errorMessage = error.message || 'Image upload failed. Please try again.';
+    console.error('Provider image upload error:', errorMessage);
+
     return NextResponse.json(
-      { success: false, error: { message: error.message || 'Image upload failed' } },
+      {
+        success: false,
+        error: {
+          message: errorMessage,
+        },
+      },
       { status: 400 }
     );
   }

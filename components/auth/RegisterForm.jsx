@@ -51,17 +51,36 @@ export function RegisterForm() {
     },
   });
 
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const uploadFile = async (file) => {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setPhotoError('Image file size exceeds 5MB limit');
+      const err = 'Image file size exceeds the 5MB limit. Please choose a photo smaller than 5MB.';
+      setPhotoError(err);
+      toast.error(err);
+      return;
+    }
+
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    const fileName = file.name || '';
+    const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
+    if (!validExtensions.includes(ext)) {
+      const err = 'Unsupported image format. Allowed formats are JPG, JPEG, PNG, and WEBP.';
+      setPhotoError(err);
+      toast.error(err);
       return;
     }
 
     setPhotoError('');
     setUploadingImage(true);
+    setSelectedFile(file);
+
+    // Create instant preview for great UX
+    try {
+      setPhotoPreview(URL.createObjectURL(file));
+    } catch (e) {}
 
     const formData = new FormData();
     formData.append('file', file);
@@ -74,14 +93,30 @@ export function RegisterForm() {
 
       if (res.data?.url) {
         setProfilePhotoUrl(res.data.url);
-        setPhotoPreview(URL.createObjectURL(file));
-        toast.success('Photo uploaded successfully');
+        setPhotoError('');
+        toast.success('Profile photo uploaded successfully');
+      } else {
+        throw new Error('Upload succeeded but no image URL was returned.');
       }
     } catch (err) {
-      setPhotoError(err.message || 'Image upload failed');
-      toast.error('Image upload failed');
+      const errorMsg = err.message || 'Image upload failed. Please try again.';
+      setPhotoError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadFile(file);
+    }
+  };
+
+  const handleRetryUpload = async () => {
+    if (selectedFile) {
+      await uploadFile(selectedFile);
     }
   };
 
@@ -105,8 +140,13 @@ export function RegisterForm() {
   };
 
   const onProviderSubmit = async (data) => {
+    if (uploadingImage) {
+      toast.info('Please wait for profile photo upload to finish.');
+      return;
+    }
+
     if (!profilePhotoUrl) {
-      setPhotoError('Profile photo is mandatory for service providers');
+      setPhotoError('Profile photo is mandatory for service providers. Please upload a photo.');
       toast.error('Profile photo is mandatory');
       return;
     }
@@ -328,26 +368,65 @@ export function RegisterForm() {
             <label className="block text-xs font-semibold text-slate-700">
               Profile Photo <span className="text-red-500">* (Mandatory: JPG, PNG, WEBP, max 5MB)</span>
             </label>
-            <div className="flex items-center gap-4 p-3 border border-slate-200 rounded-xl bg-slate-50">
-              {photoPreview ? (
-                <img src={photoPreview} alt="Preview" className="w-14 h-14 rounded-full object-cover border" />
-              ) : (
-                <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center text-slate-400">
-                  <User className="w-6 h-6" />
-                </div>
-              )}
-              <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 border border-slate-200 rounded-2xl bg-slate-50">
+              <div className="relative shrink-0">
+                {photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-xs"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-slate-400">
+                    <User className="w-7 h-7" />
+                  </div>
+                )}
+                {profilePhotoUrl && !uploadingImage && (
+                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full p-0.5 shadow-xs">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 space-y-2">
                 <input
                   type="file"
                   accept="image/jpeg,image/jpg,image/png,image/webp"
                   onChange={handlePhotoUpload}
-                  className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+                  disabled={uploadingImage}
+                  className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer disabled:opacity-50"
                 />
-                {uploadingImage && <p className="text-[10px] text-blue-600 mt-1">Uploading image...</p>}
-                {photoError && <p className="text-[10px] text-red-500 mt-1">{photoError}</p>}
+
+                {uploadingImage && (
+                  <p className="text-xs font-semibold text-blue-600 flex items-center gap-1.5 animate-pulse">
+                    <span>Uploading photo to Cloudinary...</span>
+                  </p>
+                )}
+
+                {profilePhotoUrl && !uploadingImage && (
+                  <p className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Photo saved & ready for registration
+                  </p>
+                )}
+
+                {photoError && (
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <p className="text-xs font-semibold text-rose-600">{photoError}</p>
+                    {selectedFile && !uploadingImage && (
+                      <button
+                        type="button"
+                        onClick={handleRetryUpload}
+                        className="text-xs font-bold text-blue-600 underline hover:text-blue-700 cursor-pointer"
+                      >
+                        Retry Upload
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input

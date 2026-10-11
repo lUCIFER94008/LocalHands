@@ -56,7 +56,7 @@ Local Hands is a complete full-stack web application built using **Next.js App R
 - **Authentication**: JWT signed tokens stored in secure `httpOnly` cookies + bcryptjs password hashing
 - **Security & Authorization**: Server-side role checks (`customer`, `provider`, `admin`) and middleware protection
 - **Email Service**: Nodemailer for OTP delivery
-- **File Uploads**: Server-side image storage in `/public/uploads/providers` with file type validation
+- **File Uploads**: Permanent serverless image storage with Cloudinary API, binary magic number validation, and secure HTTPS delivery
 
 ---
 
@@ -177,14 +177,57 @@ npm install
 Create `.env.local` in the root directory:
 
 ```env
-MONGODB_URI=mongodb://127.0.0.1:27017/localhands
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/localhands
 JWT_SECRET=local_hands_jwt_secret_key_2026_super_secure_token
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=noreply@localhands.com
 EMAIL_PASSWORD=app_password_here
 EMAIL_FROM="Local Hands <noreply@localhands.com>"
+
+# Cloudinary Configuration (Permanent Production Image Storage)
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
+
+### ☁️ Cloudinary Configuration for Vercel & Production
+
+Local Hands uses **Cloudinary** for permanent, serverless image storage so that provider profile photos upload seamlessly without writing to Vercel's read-only deployment filesystem.
+
+#### Step 1: Create a Free Cloudinary Account
+1. Go to [https://cloudinary.com](https://cloudinary.com) and create a free account.
+2. Log in to your Cloudinary Management Console.
+
+#### Step 2: Retrieve API Keys
+1. From the Cloudinary Dashboard, find your **Product Environment Credentials**:
+   - **Cloud Name** (`CLOUDINARY_CLOUD_NAME`)
+   - **API Key** (`CLOUDINARY_API_KEY`)
+   - **API Secret** (`CLOUDINARY_API_SECRET`)
+
+#### Step 3: Add Keys Locally
+Add the keys to your local `.env.local` file:
+```env
+CLOUDINARY_CLOUD_NAME=dxxxxxx
+CLOUDINARY_API_KEY=123456789012345
+CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz1234
+```
+
+#### Step 4: Configure on Vercel
+1. Open your project on the [Vercel Dashboard](https://vercel.com).
+2. Navigate to **Settings** → **Environment Variables**.
+3. Add the three variables:
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+4. Make sure all environments (**Production**, **Preview**, **Development**) are checked.
+5. Click **Save**.
+
+#### Step 5: Redeploy on Vercel
+1. Go to **Deployments** on Vercel.
+2. Click the three dots `...` on the latest deployment and select **Redeploy** (or push a new commit to GitHub).
+3. Provider registration and image uploads will now permanently store images in Cloudinary without filesystem errors!
+
 
 ### 3. Seed Database
 

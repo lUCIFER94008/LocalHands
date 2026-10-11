@@ -83,7 +83,14 @@ export async function POST(req) {
         );
       }
 
-      const profilePhoto = body.profilePhoto || '/uploads/providers/default-provider.jpg';
+      const profilePhoto = body.profilePhoto;
+      if (!profilePhoto || typeof profilePhoto !== 'string' || !profilePhoto.trim()) {
+        return NextResponse.json(
+          { success: false, error: { message: 'Profile photo is mandatory for service provider registration.' } },
+          { status: 400 }
+        );
+      }
+
       const hashedPassword = await hashPassword(password);
 
       const user = await User.create({
@@ -93,8 +100,9 @@ export async function POST(req) {
         password: hashedPassword,
         role: 'provider',
         profileImage: profilePhoto,
-        isActive: false, // Inactive until approved
+        isActive: false, // Inactive until approved by admin
       });
+
 
       const defaultAvailability = [
         { day: 'Monday', enabled: true, startTime: '09:00', endTime: '18:00' },

@@ -29,15 +29,7 @@ export async function POST(req) {
       );
     }
 
-    // 2. Check if account is active
-    if (!user.isActive) {
-      return NextResponse.json(
-        { success: false, error: { message: 'Your account has been deactivated. Please contact support.' } },
-        { status: 403 }
-      );
-    }
-
-    // 3. Compare password using bcryptjs
+    // 2. Compare password using bcryptjs
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
       return NextResponse.json(
@@ -46,7 +38,7 @@ export async function POST(req) {
       );
     }
 
-    // 4. Role matching check for user convenience if tab mismatched
+    // 3. Role matching check for user convenience if tab mismatched
     if (requestedRole && user.role !== requestedRole) {
       return NextResponse.json(
         {
@@ -58,6 +50,7 @@ export async function POST(req) {
         { status: 400 }
       );
     }
+
 
     // 5. Provider approval verification (Only applies if user DB role is provider)
     if (user.role === 'provider') {
@@ -109,8 +102,17 @@ export async function POST(req) {
       }
     }
 
+    // 5. Check if user account is active
+    if (!user.isActive) {
+      return NextResponse.json(
+        { success: false, error: { message: 'Your account has been deactivated. Please contact support.' } },
+        { status: 403 }
+      );
+    }
+
     // 6. Generate JWT payload using authoritative DB role
     const token = signToken({ userId: user._id.toString(), role: user.role });
+
 
     // 7. Determine correct dashboard redirect
     let redirectPath = '/customer';
