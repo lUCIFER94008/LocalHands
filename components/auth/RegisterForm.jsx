@@ -120,6 +120,13 @@ export function RegisterForm() {
     }
   };
 
+  const handleRemovePhoto = () => {
+    setSelectedFile(null);
+    setPhotoPreview('');
+    setProfilePhotoUrl('');
+    setPhotoError('');
+  };
+
   const onCustomerSubmit = async (data) => {
     setLoading(true);
     try {
@@ -145,17 +152,15 @@ export function RegisterForm() {
       return;
     }
 
-    if (!profilePhotoUrl) {
-      setPhotoError('Profile photo is mandatory for service providers. Please upload a photo.');
-      toast.error('Profile photo is mandatory');
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await apiFetch('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ ...data, role: 'provider', profilePhoto: profilePhotoUrl }),
+        body: JSON.stringify({
+          ...data,
+          role: 'provider',
+          profilePhoto: profilePhotoUrl || '',
+        }),
       });
 
       if (res.success) {
@@ -363,11 +368,14 @@ export function RegisterForm() {
             {...providerForm.register('description')}
           />
 
-          {/* Profile Photo Upload Field */}
+          {/* Profile Photo Upload Field (Optional) */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700">
-              Profile Photo <span className="text-red-500">* (Mandatory: JPG, PNG, WEBP, max 5MB)</span>
+              Profile Photo (Optional)
             </label>
+            <p className="text-[11px] text-slate-500">
+              Upload a photo to help customers recognize you. You can add one later.
+            </p>
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 border border-slate-200 rounded-2xl bg-slate-50">
               <div className="relative shrink-0">
                 {photoPreview ? (
@@ -377,8 +385,12 @@ export function RegisterForm() {
                     className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-xs"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-slate-400">
-                    <User className="w-7 h-7" />
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-lg shadow-xs select-none">
+                    {providerForm.watch('name')?.trim() ? (
+                      providerForm.watch('name').trim().charAt(0).toUpperCase()
+                    ) : (
+                      <User className="w-7 h-7 text-white/80" />
+                    )}
                   </div>
                 )}
                 {profilePhotoUrl && !uploadingImage && (
@@ -389,13 +401,28 @@ export function RegisterForm() {
               </div>
 
               <div className="flex-1 space-y-2">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handlePhotoUpload}
-                  disabled={uploadingImage}
-                  className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer disabled:opacity-50"
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingImage}
+                    className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer disabled:opacity-50"
+                  />
+                  {(photoPreview || profilePhotoUrl) && !uploadingImage && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="text-xs font-semibold text-rose-600 hover:text-rose-700 px-2.5 py-1 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 transition-colors"
+                    >
+                      Remove Photo
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-400">
+                  Upload a JPG, PNG, JPEG, or WEBP image up to 5 MB. You can add a photo later.
+                </p>
 
                 {uploadingImage && (
                   <p className="text-xs font-semibold text-blue-600 flex items-center gap-1.5 animate-pulse">

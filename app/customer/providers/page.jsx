@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/utils';
 import { RatingStars } from '@/ui/RatingStars';
 import { Button } from '@/ui/Button';
 import { SkeletonCard } from '@/ui/Skeleton';
+import { ProviderCardImage } from '@/ui/ProviderCardImage';
 import { Search, MapPin, ShieldCheck, Bookmark, Award, Heart } from 'lucide-react';
 import { useToast } from '@/ui/Toast';
 
@@ -126,18 +127,13 @@ export default function CustomerProvidersPage() {
               </button>
 
               <div>
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 bg-slate-100">
-                  <img
-                    src={p.photo || p.userPhoto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&auto=format&fit=crop&q=80'}
-                    alt={p.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {p.isVerified && (
-                    <div className="absolute top-3 left-3 bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" /> Verified
-                    </div>
-                  )}
-                </div>
+                <ProviderCardImage
+                  src={p.photo || p.userPhoto}
+                  name={p.name}
+                  profession={p.profession}
+                  isVerified={p.isVerified}
+                  className="mb-4"
+                />
 
                 <h3 className="font-bold text-slate-900 text-lg">{p.name}</h3>
                 <p className="text-xs font-semibold text-blue-600 mb-2">{p.profession}</p>

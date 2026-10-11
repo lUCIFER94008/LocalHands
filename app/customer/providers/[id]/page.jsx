@@ -9,6 +9,7 @@ import { Button } from '@/ui/Button';
 import { Tabs } from '@/ui/Tabs';
 import { Modal } from '@/ui/Modal';
 import { BookingWizard } from '@/components/booking/BookingWizard';
+import { ProviderCardImage } from '@/ui/ProviderCardImage';
 import { ShieldCheck, MapPin, Award, MessageSquare, Calendar, Star, Clock, Check } from 'lucide-react';
 import { useToast } from '@/ui/Toast';
 
@@ -73,17 +74,14 @@ export default function ProviderDetailPage({ params }) {
     <div className="space-y-8 max-w-5xl mx-auto">
       {/* Provider Header Profile Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xl flex flex-col md:flex-row items-center md:items-start gap-8">
-        <div className="relative w-40 h-40 sm:w-48 sm:h-48 rounded-3xl overflow-hidden shrink-0 shadow-lg border-2 border-slate-100">
-          <img
-            src={provider.photo || provider.userPhoto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&auto=format&fit=crop&q=80'}
-            alt={provider.name}
-            className="w-full h-full object-cover"
+        <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-3xl overflow-hidden shrink-0 shadow-lg border-2 border-slate-100">
+          <ProviderCardImage
+            src={provider.photo || provider.userPhoto}
+            name={provider.name}
+            profession={provider.profession}
+            isVerified={provider.isVerified}
+            aspect="aspect-square"
           />
-          {provider.isVerified && (
-            <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> Verified
-            </div>
-          )}
         </div>
 
         <div className="flex-1 text-center md:text-left space-y-3">

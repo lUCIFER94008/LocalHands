@@ -6,6 +6,7 @@ import { apiFetch } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 import { RatingStars } from '@/ui/RatingStars';
 import { Button } from '@/ui/Button';
+import { ProviderCardImage } from '@/ui/ProviderCardImage';
 import { Bookmark, ShieldCheck, MapPin, Award, Trash2 } from 'lucide-react';
 import { useToast } from '@/ui/Toast';
 
@@ -59,15 +60,17 @@ export default function CustomerSavedPage() {
           {providers.map((p) => (
             <div key={p.id} className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between relative">
               <div>
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 bg-slate-100">
-                  <img
-                    src={p.photo || p.userPhoto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&auto=format&fit=crop&q=80'}
-                    alt={p.name}
-                    className="w-full h-full object-cover"
+                <div className="relative mb-4">
+                  <ProviderCardImage
+                    src={p.photo || p.userPhoto}
+                    name={p.name}
+                    profession={p.profession}
+                    isVerified={p.isVerified}
+                    aspect="aspect-square"
                   />
                   <button
                     onClick={() => handleRemoveSaved(p.id)}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-white/90 shadow-md text-rose-600 hover:bg-rose-50"
+                    className="absolute top-3 right-3 p-2 rounded-full bg-white/90 shadow-md text-rose-600 hover:bg-rose-50 z-10"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

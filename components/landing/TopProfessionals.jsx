@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Button } from '@/components/ui/Button';
+import { ProviderCardImage } from '@/components/ui/ProviderCardImage';
 import { ShieldCheck, MapPin, Award, ArrowRight } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { apiFetch } from '@/lib/api';
@@ -138,19 +139,15 @@ export function TopProfessionals() {
               className="bg-white rounded-[24px] p-6 border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
-                <div className="relative w-full aspect-[4/3] rounded-[18px] overflow-hidden mb-5 bg-slate-100">
-                  <img
-                    src={p.photo || p.profilePhoto || SEED_PROVIDERS[idx % SEED_PROVIDERS.length].photo}
-                    alt={p.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  {(p.isVerified ?? true) && (
-                    <div className="absolute top-3 left-3 bg-[#10B981] text-white text-[10px] font-extrabold px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Verified</span>
-                    </div>
-                  )}
-                </div>
+                <ProviderCardImage
+                  src={p.photo || p.profilePhoto}
+                  name={p.name}
+                  profession={p.profession}
+                  isVerified={p.isVerified ?? true}
+                  aspect="aspect-[4/3]"
+                  className="mb-5 rounded-[18px]"
+                  imgClassName="group-hover:scale-105 transition-transform duration-500"
+                />
 
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">

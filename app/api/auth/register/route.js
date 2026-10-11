@@ -83,13 +83,10 @@ export async function POST(req) {
         );
       }
 
-      const profilePhoto = body.profilePhoto;
-      if (!profilePhoto || typeof profilePhoto !== 'string' || !profilePhoto.trim()) {
-        return NextResponse.json(
-          { success: false, error: { message: 'Profile photo is mandatory for service provider registration.' } },
-          { status: 400 }
-        );
-      }
+      const profilePhoto =
+        typeof body.profilePhoto === 'string' && body.profilePhoto.trim()
+          ? body.profilePhoto.trim()
+          : '';
 
       const hashedPassword = await hashPassword(password);
 
