@@ -99,7 +99,13 @@ export async function POST(req) {
     const { providerId, serviceId, bookingDate, bookingTime, address, notes } = parseResult.data;
 
     const provider = await Provider.findById(providerId).populate('user');
-    if (!provider || provider.approvalStatus !== 'approved' || !provider.isApproved) {
+    if (
+      !provider ||
+      provider.approvalStatus !== 'approved' ||
+      !provider.isApproved ||
+      provider.isActive === false ||
+      provider.isAvailable === false
+    ) {
       return NextResponse.json(
         { success: false, error: { message: 'Selected provider is not available for bookings.' } },
         { status: 400 }
@@ -114,8 +120,39 @@ export async function POST(req) {
       );
     }
 
+    // Verify booking date is not in the past (compare YYYY-MM-DD in local time)
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (bookingDate < todayStr) {
+      return NextResponse.json(
+        { success: false, error: { message: 'Booking date cannot be in the past.' } },
+        { status: 400 }
+      );
+    }
+
+    // Validate provider day-of-week availability if configured
+    if (Array.isArray(provider.availability) && provider.availability.length > 0) {
+      const selectedDayName = new Date(bookingDate + 'T00:00:00').toLocaleDateString('en-US', {
+        weekday: 'long',
+      });
+      const dayAvail = provider.availability.find(
+        (a) => a.day?.toLowerCase() === selectedDayName.toLowerCase()
+      );
+      if (dayAvail && dayAvail.enabled === false) {
+        return NextResponse.json(
+          { success: false, error: { message: `Provider is not available on ${selectedDayName}s.` } },
+          { status: 400 }
+        );
+      }
+    }
+
+    // If structured address components were passed, format cleanly
+    let finalAddress = address;
+    if (body.house && body.street && body.city) {
+      finalAddress = `${body.house}, ${body.street}, ${body.city}, ${body.state || ''} ${body.pincode ? `- ${body.pincode}` : ''}`.trim();
+    }
+
     // Backend calculation of price & taxes to prevent client price tampering
-    const basePrice = provider.priceFrom || service.startingPrice || 299;
+    const basePrice = service.startingPrice || provider.priceFrom || 299;
     const tax = Math.round(basePrice * 0.18); // 18% GST/Tax
     const totalAmount = basePrice + tax;
 
@@ -125,7 +162,7 @@ export async function POST(req) {
       service: service._id,
       bookingDate,
       bookingTime,
-      address,
+      address: finalAddress,
       notes: notes || '',
       price: basePrice,
       tax,
@@ -147,8 +184,14 @@ export async function POST(req) {
       success: true,
       data: {
         booking: {
-          id: booking._id,
+          id: booking._id.toString(),
           bookingId: booking._id.toString(),
+          providerName: provider.user?.name || provider.profession,
+          serviceName: service.name,
+          bookingDate: booking.bookingDate,
+          bookingTime: booking.bookingTime,
+          price: booking.price,
+          tax: booking.tax,
           totalAmount: booking.totalAmount,
           status: booking.status,
         },

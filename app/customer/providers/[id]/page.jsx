@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 import { RatingStars } from '@/ui/RatingStars';
 import { Button } from '@/ui/Button';
 import { Tabs } from '@/ui/Tabs';
-import { Modal } from '@/ui/Modal';
-import { BookingWizard } from '@/components/booking/BookingWizard';
 import { ProviderCardImage } from '@/ui/ProviderCardImage';
 import { ShieldCheck, MapPin, Award, MessageSquare, Calendar, Star, Clock, Check } from 'lucide-react';
 import { useToast } from '@/ui/Toast';
@@ -23,7 +22,6 @@ export default function ProviderDetailPage({ params }) {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('about');
-  const [bookingWizardOpen, setBookingWizardOpen] = useState(false);
 
   useEffect(() => {
     async function loadDetail() {
@@ -108,9 +106,11 @@ export default function ProviderDetailPage({ params }) {
 
           {/* Action Buttons */}
           <div className="pt-4 flex flex-wrap justify-center md:justify-start gap-4">
-            <Button variant="primary" size="lg" onClick={() => setBookingWizardOpen(true)} className="px-8 font-bold gap-2">
-              <Calendar className="w-5 h-5" /> Book Now
-            </Button>
+            <Link href={`/customer/bookings/new?providerId=${provider._id || provider.id || id}`}>
+              <Button variant="primary" size="lg" className="px-8 font-bold gap-2">
+                <Calendar className="w-5 h-5" /> Book Now
+              </Button>
+            </Link>
             <Button variant="outline" size="lg" onClick={handleStartMessage} className="px-6 gap-2">
               <MessageSquare className="w-5 h-5 text-blue-600" /> Message
             </Button>
@@ -194,10 +194,6 @@ export default function ProviderDetailPage({ params }) {
         )}
       </div>
 
-      {/* Booking Wizard Modal */}
-      <Modal isOpen={bookingWizardOpen} onClose={() => setBookingWizardOpen(false)} maxWidth="max-w-4xl">
-        <BookingWizard provider={provider} services={services} />
-      </Modal>
     </div>
   );
 }

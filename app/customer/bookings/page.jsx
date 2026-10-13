@@ -115,7 +115,12 @@ export default function CustomerBookingsPage() {
             <div key={b.id} className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <span className="text-[10px] font-mono font-bold text-slate-400">ID: {b.id.substring(0, 8)}...</span>
+                  <Link
+                    href={`/customer/bookings/${b.id}`}
+                    className="text-[10px] font-mono font-bold text-slate-400 hover:text-blue-600 transition-colors"
+                  >
+                    ID: {b.id.substring(0, 8)}...
+                  </Link>
                   <StatusBadge status={b.status} />
                 </div>
 
@@ -144,7 +149,13 @@ export default function CustomerBookingsPage() {
                   <span className="text-base font-black text-slate-900">{formatPrice(b.totalAmount)}</span>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/customer/bookings/${b.id}`}>
+                    <Button variant="outline" size="sm" className="text-slate-700 hover:text-blue-600">
+                      View Details
+                    </Button>
+                  </Link>
+
                   {['pending', 'accepted'].includes(b.status) && (
                     <Button variant="outline" size="sm" onClick={() => handleCancelBooking(b.id)} className="text-rose-600 border-rose-200 hover:bg-rose-50">
                       Cancel
@@ -158,7 +169,7 @@ export default function CustomerBookingsPage() {
                   )}
 
                   {b.review && (
-                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 self-center">
                       Reviewed ★ {b.review.rating}
                     </span>
                   )}

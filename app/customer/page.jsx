@@ -230,7 +230,7 @@ export default function CustomerDashboard() {
                     <span className="text-[10px] text-slate-400 font-bold uppercase block">Rate</span>
                     <span className="text-xs font-black text-slate-900">{formatPrice(p.priceFrom)}</span>
                   </div>
-                  <Link href={`/customer/providers/${p.id}`}>
+                  <Link href={`/customer/bookings/new?providerId=${p.id || p._id}`}>
                     <Button variant="primary" size="sm">
                       Book Now
                     </Button>

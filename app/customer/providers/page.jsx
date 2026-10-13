@@ -156,11 +156,18 @@ export default function CustomerProvidersPage() {
                   <p className="text-sm font-black text-slate-900">{formatPrice(p.priceFrom)}</p>
                 </div>
 
-                <Link href={`/customer/providers/${p.id}`}>
-                  <Button variant="primary" size="sm">
-                    Book Now
-                  </Button>
-                </Link>
+                <div className="flex gap-2">
+                  <Link href={`/customer/providers/${p.id}`}>
+                    <Button variant="outline" size="sm">
+                      Details
+                    </Button>
+                  </Link>
+                  <Link href={`/customer/bookings/new?providerId=${p.id}`}>
+                    <Button variant="primary" size="sm">
+                      Book Now
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
